@@ -12,7 +12,12 @@
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix"
   },
-  "keywords": ["langchain", "typescript", "google-genai", "tutorial"],
+  "keywords": [
+    "langchain",
+    "typescript",
+    "google-genai",
+    "tutorial"
+  ],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.19.0",
@@ -26,6 +31,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@langchain/core": "^1.0.1",
     "@langchain/google-genai": "^1.0.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",

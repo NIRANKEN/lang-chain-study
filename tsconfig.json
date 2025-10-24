@@ -13,9 +13,7 @@
     "moduleResolution": "bundler",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": false
+    "sourceMap": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

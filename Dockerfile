@@ -1,28 +1,28 @@
 # Build stage
 FROM node:20-slim AS builder
 
-# Install pnpm
-RUN npm install -g pnpm
+# Enable corepack for pnpm
+RUN corepack enable
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files (package.json contains packageManager field)
 COPY package.json pnpm-lock.yaml* ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN corepack pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
 # Build TypeScript
-RUN pnpm build
+RUN corepack pnpm build
 
 # Production stage
 FROM node:20-slim
 
-# Install pnpm
-RUN npm install -g pnpm
+# Enable corepack for pnpm
+RUN corepack enable
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml* ./
 
 # Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile
+RUN corepack pnpm install --prod --frozen-lockfile
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist

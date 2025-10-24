@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, Application } from 'express';
 import dotenv from 'dotenv';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { PromptTemplate } from '@langchain/core/prompts';
@@ -7,7 +7,7 @@ import { StringOutputParser } from '@langchain/core/output_parsers';
 // Load environment variables
 dotenv.config();
 
-const app = express();
+const app: Application = express();
 const port = process.env.PORT || 8080;
 
 // Middleware
@@ -15,7 +15,7 @@ app.use(express.json());
 
 // Initialize Google GenAI model
 const model = new ChatGoogleGenerativeAI({
-  modelName: 'gemini-pro',
+  model: 'gemini-pro',
   apiKey: process.env.GOOGLE_API_KEY,
   temperature: 0.7,
 });

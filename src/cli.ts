@@ -12,7 +12,7 @@ async function main() {
 
   // Initialize Google GenAI model
   const model = new ChatGoogleGenerativeAI({
-    modelName: 'gemini-pro',
+    model: 'gemini-pro',
     apiKey: process.env.GOOGLE_API_KEY,
     temperature: 0.7,
   });
