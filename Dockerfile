@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-slim AS builder
+FROM node:24-slim AS builder
 
 # Enable corepack for pnpm
 RUN corepack enable
@@ -10,16 +10,16 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml* ./
 
 # Install dependencies
-RUN corepack pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
 # Build TypeScript
-RUN corepack pnpm build
+RUN pnpm build
 
 # Production stage
-FROM node:20-slim
+FROM node:24-slim
 
 # Enable corepack for pnpm
 RUN corepack enable
@@ -30,7 +30,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml* ./
 
 # Install production dependencies only
-RUN corepack pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist

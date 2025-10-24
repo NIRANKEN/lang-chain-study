@@ -157,7 +157,7 @@
 │   │   ┌───────────────────────────┐   │   │
 │   │   │   Docker Container        │   │   │
 │   │   │                           │   │   │
-│   │   │   Node.js 20              │   │   │
+│   │   │   Node.js 24              │   │   │
 │   │   │   Express Server          │   │   │
 │   │   │   Port: 8080              │   │   │
 │   │   │                           │   │   │
@@ -182,7 +182,7 @@
 
 | カテゴリ | 技術 | バージョン | 用途 |
 |---------|------|-----------|------|
-| Runtime | Node.js | 20 | JavaScript実行環境 |
+| Runtime | Node.js | 24 | JavaScript実行環境 |
 | 言語 | TypeScript | 5.9.3 | 型安全な開発 |
 | パッケージマネージャ | pnpm | 10.19.0 | 依存関係管理 |
 | Webフレームワーク | Express.js | 5.1.0 | REST API構築 |

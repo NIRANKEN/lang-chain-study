@@ -19,7 +19,7 @@ NodeJS + TypeScript で実装されており、ローカル実行と GCP Cloud R
 
 ## 技術スタック
 
-- **Runtime**: Node.js 20
+- **Runtime**: Node.js 24
 - **言語**: TypeScript
 - **パッケージマネージャー**: pnpm
 - **LLMフレームワーク**: LangChain
@@ -33,7 +33,7 @@ NodeJS + TypeScript で実装されており、ローカル実行と GCP Cloud R
 
 ### 前提条件
 
-- Node.js 20以上
+- Node.js 24以上
 - pnpm
 - Google API Key (Gemini Pro用)
 - (オプション) Google Cloud SDK (Cloud Runデプロイ時)

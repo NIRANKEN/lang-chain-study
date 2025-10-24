@@ -7,6 +7,11 @@ import { StringOutputParser } from '@langchain/core/output_parsers';
 // Load environment variables
 dotenv.config();
 
+// Validate required environment variables
+if (!process.env.GOOGLE_API_KEY) {
+  throw new Error('GOOGLE_API_KEY environment variable is required. Please set it in your .env file.');
+}
+
 const app: Application = express();
 const port = process.env.PORT || 8080;
 
