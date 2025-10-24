@@ -1,0 +1,17 @@
+# Cloud Run の.dockerignore
+node_modules
+npm-debug.log
+.env
+.env.*
+!.env.example
+dist
+*.md
+.git
+.gitignore
+.vscode
+.idea
+*.log
+coverage
+.nyc_output
+*.tsbuildinfo
+.eslintcache
