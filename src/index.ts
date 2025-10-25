@@ -20,7 +20,7 @@ app.use(express.json());
 
 // Initialize Google GenAI model
 const model = new ChatGoogleGenerativeAI({
-  model: 'gemini-pro',
+  model: 'gemini-2.5-flash',
   apiKey: process.env.GOOGLE_API_KEY,
   temperature: 0.7,
 });
