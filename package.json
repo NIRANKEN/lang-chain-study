@@ -31,10 +31,16 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@langchain/classic": "^1.0.0",
+    "@langchain/community": "^1.0.0",
     "@langchain/core": "^1.0.1",
     "@langchain/google-genai": "^1.0.0",
+    "@langchain/google-vertexai": "^1.0.0",
+    "@langchain/textsplitters": "^1.0.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "langchain": "^1.0.1"
+    "langchain": "^1.0.1",
+    "pdf-parse": "1.1.1",
+    "zod": "^4.1.12"
   }
 }
