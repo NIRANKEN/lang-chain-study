@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "dev": "nodemon",
+    "dev:tsx": "tsx --watch src/index.ts",
     "dev:cli": "tsx src/cli.ts",
     "build": "tsc",
     "start": "node dist/index.js",
@@ -27,10 +28,12 @@
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "eslint": "^9.38.0",
+    "nodemon": "^3.1.10",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@lancedb/lancedb": "^0.22.2",
     "@langchain/classic": "^1.0.0",
     "@langchain/community": "^1.0.0",
     "@langchain/core": "^1.0.1",

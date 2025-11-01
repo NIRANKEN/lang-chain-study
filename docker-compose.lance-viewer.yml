@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  lance-data-viewer:
+    image: ghcr.io/gordonmurray/lance-data-viewer:lancedb-0.24.3
+    container_name: lance-data-viewer
+    ports:
+      - "8090:8080"
+    volumes:
+      # Mount the local Lance data directory as read-only
+      - ./data/sample-lancedb:/data:ro
+    environment:
+      # Optional environment variables for configuration
+      - PORT=8080
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Alternative service for legacy Lance data (if needed)
+  lance-data-viewer-legacy:
+    image: ghcr.io/gordonmurray/lance-data-viewer:lancedb-0.16.0
+    container_name: lance-data-viewer-legacy
+    ports:
+      - "8091:8080"
+    volumes:
+      - ./data/sample-lancedb:/data:ro
+    environment:
+      - PORT=8080
+    restart: unless-stopped
+    profiles:
+      - legacy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
