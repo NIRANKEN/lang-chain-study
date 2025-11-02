@@ -36,8 +36,11 @@ export class DocumentService {
    * PDFファイルを処理してベクトルストアに追加
    */
   async processPdfDocument(): Promise<DocumentProcessResult> {
+    // 本番用は統一テーブルを使用
+    const tableName = TABLE_NAMES.DOCUMENTS;
+    
     // 処理前に同じソースのドキュメントが存在するか確認
-    if (await this.isSourceExists(TABLE_NAMES.TRAVEL_REPORTS, PDF_FILE_PATH)) {
+    if (await this.isSourceExists(tableName, PDF_FILE_PATH)) {
       console.log(
         `ソース ${PDF_FILE_PATH} は既に処理済みのため、スキップします`
       );
@@ -55,18 +58,18 @@ export class DocumentService {
     const db = getDatabase();
     const tableNames = await db.tableNames();
 
-    if (!tableNames.includes(TABLE_NAMES.TRAVEL_REPORTS)) {
+    if (!tableNames.includes(tableName)) {
       // テーブルが存在しない場合は、直接ドキュメントから作成
-      console.log("travel_reportsテーブルが存在しないため、新しく作成します");
+      console.log(`${tableName}テーブルが存在しないため、新しく作成します`);
       await LanceDB.fromDocuments(allSplits, embeddings, {
         uri: DB_PATH,
-        tableName: TABLE_NAMES.TRAVEL_REPORTS,
+        tableName: tableName,
       });
       console.log("新しいテーブルを作成してドキュメントを追加しました");
     } else {
       // テーブルが存在する場合
       try {
-        const dbTable = await db.openTable(TABLE_NAMES.TRAVEL_REPORTS);
+        const dbTable = await db.openTable(tableName);
         const rowCount = await dbTable.countRows();
 
         if (rowCount === 0) {
@@ -76,7 +79,7 @@ export class DocumentService {
           );
           await LanceDB.fromDocuments(allSplits, embeddings, {
             uri: DB_PATH,
-            tableName: TABLE_NAMES.TRAVEL_REPORTS,
+            tableName: tableName,
           });
         } else {
           // テーブルにデータが存在する場合、通常の追加処理
@@ -90,7 +93,7 @@ export class DocumentService {
         console.log("テーブル操作でエラーが発生、fromDocumentsで再作成します");
         await LanceDB.fromDocuments(allSplits, embeddings, {
           uri: DB_PATH,
-          tableName: TABLE_NAMES.TRAVEL_REPORTS,
+          tableName: tableName,
         });
       }
     }
@@ -100,7 +103,7 @@ export class DocumentService {
     );
 
     // 追加後のテーブル状態を確認
-    const finalTable = await db.openTable(TABLE_NAMES.TRAVEL_REPORTS);
+    const finalTable = await db.openTable(tableName);
     const totalRows = await finalTable.countRows();
     console.log(`テーブル内の総行数: ${totalRows}`);
 
@@ -112,18 +115,20 @@ export class DocumentService {
   }
 
   /**
-   * YouTube動画を処理してベクトルストアに追加
+   * YouTube動画を処理してベクトルストアに追加（本番用：統一テーブル使用）
    */
   async processYoutubeVideo(
     videoUrls?: string[]
   ): Promise<DocumentProcessResult> {
+    // 本番用は統一テーブルを使用
+    const tableName = TABLE_NAMES.DOCUMENTS;
     const inputUrls =
       videoUrls && videoUrls.length > 0 ? videoUrls : [YOUTUBE_TEST_URL];
     const urlsToProcess: string[] = [];
 
     // 各URLが既に処理済みか確認
     for (const url of inputUrls) {
-      if (await this.isSourceExists(TABLE_NAMES.YOUTUBE_VIDEOS, url)) {
+      if (await this.isSourceExists(tableName, url)) {
         console.log(`URL ${url} は既に処理済みのため、スキップします`);
       } else {
         urlsToProcess.push(url);
@@ -159,17 +164,17 @@ export class DocumentService {
     const db = getDatabase();
     const tableNames = await db.tableNames();
 
-    if (!tableNames.includes(TABLE_NAMES.YOUTUBE_VIDEOS)) {
+    if (!tableNames.includes(tableName)) {
       // テーブルが存在しない場合は、直接ドキュメントから作成
-      console.log("youtube_videosテーブルが存在しないため、新しく作成します");
+      console.log(`${tableName}テーブルが存在しないため、新しく作成します`);
       await LanceDB.fromDocuments(allSplits, embeddings, {
         uri: DB_PATH,
-        tableName: TABLE_NAMES.YOUTUBE_VIDEOS,
+        tableName: tableName,
       });
       console.log("新しいテーブルを作成してドキュメントを追加しました");
     } else {
       // テーブルが存在する場合
-      const dbTable = await db.openTable(TABLE_NAMES.YOUTUBE_VIDEOS);
+      const dbTable = await db.openTable(tableName);
       const vectorStore = new LanceDB(embeddings, {
         table: dbTable,
       });
@@ -177,9 +182,15 @@ export class DocumentService {
       console.log("既存のテーブルにドキュメントを追加しました");
     }
 
+    // 追加後のテーブル状態を確認
+    const finalTable = await db.openTable(tableName);
+    const totalRows = await finalTable.countRows();
+    console.log(`テーブル内の総行数: ${totalRows}`);
+
     return {
       message: `YouTube動画の処理が完了しました (新規${urlsToProcess.length}件 / 全${inputUrls.length}件)`,
       totalChunks: allSplits.length,
+      totalRowsInTable: totalRows,
     };
   }
 }

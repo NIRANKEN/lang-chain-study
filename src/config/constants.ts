@@ -5,6 +5,8 @@ export const DB_PATH = "./data/sample-lancedb";
 export const TABLE_NAMES = {
   TRAVEL_REPORTS: "travel_reports",
   YOUTUBE_VIDEOS: "youtube_videos",
+  // 本番用統一テーブル
+  DOCUMENTS: "documents",
 } as const;
 
 // PDF file path
@@ -53,4 +55,6 @@ export const SYSTEM_MESSAGES = {
 export const FALLBACK_SOURCES = {
   PDF: "PDFファイルから取得",
   YOUTUBE: "YouTube動画から取得",
+  // 本番用統一ソース
+  DOCUMENTS: "ドキュメントから取得",
 } as const;

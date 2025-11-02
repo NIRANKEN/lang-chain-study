@@ -17,13 +17,10 @@ router.get("/health", chatController.healthCheck.bind(chatController));
 // チャットルート
 router.post("/chat", chatController.chat.bind(chatController));
 
-// ベクトルストア関連ルート
-router.post("/initialize-vector-store", vectorController.initializeVectorStore.bind(vectorController));
-router.post("/input-test", vectorController.inputPdfTest.bind(vectorController));
-router.post("/input-youtube-test", vectorController.inputYoutubeTest.bind(vectorController));
-
-// RAG検索・回答ルート
-router.post("/output-test", ragController.outputTest.bind(ragController));
-router.post("/output-youtube-test", ragController.outputYoutubeTest.bind(ragController));
+// RESTful API エンドポイント
+router.post("/api/v1/vector-store/init", vectorController.initializeVectorStore.bind(vectorController));
+router.post("/api/v1/documents", vectorController.addDocuments.bind(vectorController));
+router.post("/api/v1/youtube-videos", vectorController.addYoutubeVideos.bind(vectorController));
+router.post("/api/v1/search", ragController.search.bind(ragController));
 
 export default router;

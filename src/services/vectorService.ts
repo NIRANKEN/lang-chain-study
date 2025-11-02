@@ -31,7 +31,7 @@ export class VectorStoreService {
       message:
         "ベクトルストアが初期化されました。最初のドキュメント追加時にテーブルが作成されます。",
       tables: tableNames,
-      nextStep: "POST /input-test を呼び出してPDFデータを追加してください",
+      nextStep: "POST /api/v1/documents を呼び出してPDFデータを追加してください",
     };
   }
 
