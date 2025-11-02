@@ -4,14 +4,49 @@ import { LanceDB } from "@langchain/community/vectorstores/lancedb";
 import { Document } from "@langchain/core/documents";
 import { getDatabase } from "../config/database";
 import { embeddings, textSplitter } from "../config/models";
-import { PDF_FILE_PATH, YOUTUBE_TEST_URL, TABLE_NAMES, DB_PATH } from "../config/constants";
+import {
+  PDF_FILE_PATH,
+  YOUTUBE_TEST_URL,
+  TABLE_NAMES,
+  DB_PATH,
+} from "../config/constants";
 import { DocumentProcessResult } from "../types";
 
 export class DocumentService {
   /**
+   * 指定されたソースがテーブルに既に存在するかを確認
+   */
+  private async isSourceExists(
+    tableName: string,
+    source: string
+  ): Promise<boolean> {
+    const db = getDatabase();
+    const tableNames = await db.tableNames();
+    if (!tableNames.includes(tableName)) {
+      return false;
+    }
+
+    const table = await db.openTable(tableName);
+    // metadata.source を SQLライクな `where` 句でフィルタリングして件数をカウント
+    const count = await table.countRows(`source = '${source}'`);
+    return count > 0;
+  }
+
+  /**
    * PDFファイルを処理してベクトルストアに追加
    */
   async processPdfDocument(): Promise<DocumentProcessResult> {
+    // 処理前に同じソースのドキュメントが存在するか確認
+    if (await this.isSourceExists(TABLE_NAMES.TRAVEL_REPORTS, PDF_FILE_PATH)) {
+      console.log(
+        `ソース ${PDF_FILE_PATH} は既に処理済みのため、スキップします`
+      );
+      return {
+        message: "指定されたPDFファイルは既に処理済みです",
+        totalChunks: 0,
+      };
+    }
+
     const pdfLoader = new PDFLoader(PDF_FILE_PATH);
     const data = await pdfLoader.load();
     const allSplits = await textSplitter.splitDocuments(data);
@@ -79,13 +114,30 @@ export class DocumentService {
   /**
    * YouTube動画を処理してベクトルストアに追加
    */
-  async processYoutubeVideo(videoUrls?: string[]): Promise<DocumentProcessResult> {
-    // videoUrlsが提供されている場合はそれを使用、そうでなければデフォルトURL
-    const urlsToProcess = videoUrls && videoUrls.length > 0 ? videoUrls : [YOUTUBE_TEST_URL];
-    
+  async processYoutubeVideo(
+    videoUrls?: string[]
+  ): Promise<DocumentProcessResult> {
+    const inputUrls =
+      videoUrls && videoUrls.length > 0 ? videoUrls : [YOUTUBE_TEST_URL];
+    const urlsToProcess: string[] = [];
+
+    // 各URLが既に処理済みか確認
+    for (const url of inputUrls) {
+      if (await this.isSourceExists(TABLE_NAMES.YOUTUBE_VIDEOS, url)) {
+        console.log(`URL ${url} は既に処理済みのため、スキップします`);
+      } else {
+        urlsToProcess.push(url);
+      }
+    }
+
+    if (urlsToProcess.length === 0) {
+      return {
+        message: "指定されたYouTube動画はすべて処理済みです",
+        totalChunks: 0,
+      };
+    }
+
     let allDocs: Document[] = [];
-    
-    // 複数のURL用の処理
     for (const url of urlsToProcess) {
       console.log(`Processing YouTube URL: ${url}`);
       const ytLoader = YoutubeLoader.createFromUrl(url, {
@@ -93,20 +145,12 @@ export class DocumentService {
         addVideoInfo: true,
       });
       const docs = await ytLoader.load();
-      
-      // ドキュメントのメタデータを確認・修正
-      docs.forEach((doc, index) => {
-        console.log(`Document ${index} metadata:`, doc.metadata);
-        // URLをソースとして追加（存在しない場合）
-        if (!doc.metadata.source && url) {
-          doc.metadata.source = url;
-        }
-        // video_idがあるがsourceがvideo_idのみの場合、完全なURLに変更
-        if (doc.metadata.source && !doc.metadata.source.startsWith('http')) {
-          doc.metadata.source = url;
-        }
+
+      // 各ドキュメントのメタデータに完全なURLをsourceとして設定
+      docs.forEach((doc) => {
+        doc.metadata.source = url;
       });
-      
+
       allDocs = allDocs.concat(docs);
     }
     const allSplits = await textSplitter.splitDocuments(allDocs);
@@ -134,7 +178,7 @@ export class DocumentService {
     }
 
     return {
-      message: `YouTube動画の処理が完了しました (${urlsToProcess.length}個のURL)`,
+      message: `YouTube動画の処理が完了しました (新規${urlsToProcess.length}件 / 全${inputUrls.length}件)`,
       totalChunks: allSplits.length,
     };
   }
