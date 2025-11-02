@@ -7,10 +7,10 @@
     "data",
     "example_data"
   ],
-  "exec": "tsx src/index.ts",
+  "exec": "tsx src/server.ts",
   "env": {
     "NODE_ENV": "development"
   },
   "delay": 1000,
-  "stdout": false
+  "stdout": true
 }
