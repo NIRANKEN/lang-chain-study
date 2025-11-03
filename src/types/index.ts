@@ -54,6 +54,11 @@ export interface YoutubeInputRequest {
   videoUrls?: string[];
 }
 
+// YouTube playlist request
+export interface YoutubePlaylistRequest {
+  playlistUrl?: string;
+}
+
 // Document processing result
 export interface DocumentProcessResult {
   message: string;

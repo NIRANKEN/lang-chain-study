@@ -11,6 +11,7 @@ import {
   DB_PATH,
 } from "../config/constants";
 import { DocumentProcessResult } from "../types";
+import { Innertube } from "youtubei.js";
 
 export class DocumentService {
   /**
@@ -38,7 +39,7 @@ export class DocumentService {
   async processPdfDocument(): Promise<DocumentProcessResult> {
     // 本番用は統一テーブルを使用
     const tableName = TABLE_NAMES.DOCUMENTS;
-    
+
     // 処理前に同じソースのドキュメントが存在するか確認
     if (await this.isSourceExists(tableName, PDF_FILE_PATH)) {
       console.log(
@@ -149,17 +150,38 @@ export class DocumentService {
         language: "ja",
         addVideoInfo: true,
       });
-      const docs = await ytLoader.load();
+      try {
+        const docs = await ytLoader.load();
+        // 各ドキュメントのメタデータに完全なURLをsourceとして設定
+        docs.forEach((doc) => {
+          doc.metadata.source = url;
+        });
 
-      // 各ドキュメントのメタデータに完全なURLをsourceとして設定
-      docs.forEach((doc) => {
-        doc.metadata.source = url;
-      });
-
-      allDocs = allDocs.concat(docs);
+        allDocs = allDocs.concat(docs);
+      } catch (error) {
+        console.error(`Error loading YouTube URL ${url}:`, error);
+        continue; // エラーが発生した場合、そのURLの処理をスキップ
+      }
     }
+
+    // 処理できたドキュメントがない場合は早期リターン
+    if (allDocs.length === 0) {
+      return {
+        message: "処理可能なYouTube動画が見つかりませんでした（トランスクリプトが利用できない可能性があります）",
+        totalChunks: 0,
+      };
+    }
+
     const allSplits = await textSplitter.splitDocuments(allDocs);
     console.log(`Split into ${allSplits.length} chunks.`);
+
+    // 分割後のチャンクが空の場合も早期リターン
+    if (allSplits.length === 0) {
+      return {
+        message: "ドキュメントの分割処理後にチャンクが生成されませんでした",
+        totalChunks: 0,
+      };
+    }
 
     const db = getDatabase();
     const tableNames = await db.tableNames();
@@ -192,5 +214,69 @@ export class DocumentService {
       totalChunks: allSplits.length,
       totalRowsInTable: totalRows,
     };
+  }
+
+  /**
+   * YouTubeプレイリストを処理してベクトルストアに追加
+   */
+  async processYoutubePlaylist(
+    playlistUrl: string
+  ): Promise<DocumentProcessResult> {
+    try {
+      const youtube = await Innertube.create({
+        lang: "ja",
+        retrieve_player: false,
+      });
+
+      // URLからプレイリストIDを安全に抽出
+      let playlistId: string;
+      try {
+        const url = new URL(playlistUrl);
+        const listParam = url.searchParams.get("list");
+        if (!listParam) {
+          throw new Error("プレイリストIDが見つかりません");
+        }
+        playlistId = listParam;
+      } catch {
+        // URLパースに失敗した場合、従来のsplit方式をフォールバック
+        const splitResult = playlistUrl.split("list=")[1];
+        if (!splitResult) {
+          throw new Error("無効なプレイリストURLです");
+        }
+        // URLパラメータの境界文字（&や#）で区切る
+        playlistId = splitResult.split(/[&#]/)[0];
+      }
+
+      if (!playlistId) {
+        throw new Error("無効なプレイリストURLです");
+      }
+      const playlist = await youtube.getPlaylist(playlistId);
+
+      if (!playlist || !playlist.videos) {
+        return {
+          message: "プレイリストが見つからないか、動画が含まれていません",
+          totalChunks: 0,
+        };
+      }
+      const videoUrls = playlist.videos
+        .map((video) => {
+          const videoId =
+            "id" in video ? (video as { id?: string }).id : undefined;
+          return videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
+        })
+        .filter((url): url is string => url !== null);
+
+      if (videoUrls.length === 0) {
+        return {
+          message: "プレイリストに動画が見つかりませんでした",
+          totalChunks: 0,
+        };
+      }
+
+      return await this.processYoutubeVideo(videoUrls);
+    } catch (error) {
+      console.error("Error processing YouTube playlist:", error);
+      throw new Error("YouTubeプレイリストの処理中にエラーが発生しました");
+    }
   }
 }

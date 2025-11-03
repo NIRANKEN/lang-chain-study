@@ -24,7 +24,8 @@ export const TEXT_SPLITTER_CONFIG = {
 
 // Retrieval configuration
 export const RETRIEVAL_CONFIG = {
-  resultCount: 2,
+  // resultCount: 2,
+  resultCount: 5,
 } as const;
 
 // System messages
