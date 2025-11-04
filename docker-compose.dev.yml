@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  langchain-app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    volumes:
+      # データディレクトリをマウント（開発時のデバッグ用）
+      - ./data:/app/data:ro

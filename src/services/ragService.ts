@@ -2,10 +2,10 @@ import * as z from "zod";
 import { tool } from "@langchain/core/tools";
 import { createAgent } from "langchain";
 import { LanceDB } from "@langchain/community/vectorstores/lancedb";
-import { getDatabase } from "../config/database";
-import { model, embeddings } from "../config/models";
-import { RETRIEVAL_CONFIG } from "../config/constants";
-import { OutputTestOptions, RagResponse } from "../types";
+import { getDatabase } from "../config/database.js";
+import { model, embeddings } from "../config/models.js";
+import { RETRIEVAL_CONFIG } from "../config/constants.js";
+import { OutputTestOptions, RagResponse } from "../types/index.js";
 
 const retrieveSchema = z.object({ query: z.string() });
 

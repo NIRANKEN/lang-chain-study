@@ -6,7 +6,7 @@ import {
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { TEXT_SPLITTER_CONFIG } from "./constants";
+import { TEXT_SPLITTER_CONFIG } from "./constants.js";
 
 // Load environment variables first
 dotenv.config();

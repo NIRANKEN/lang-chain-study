@@ -1,7 +1,7 @@
 import { Router, IRouter } from "express";
-import { ChatController } from "../controllers/chatController";
-import { VectorController } from "../controllers/vectorController";
-import { RagController } from "../controllers/ragController";
+import { ChatController } from "../controllers/chatController.js";
+import { VectorController } from "../controllers/vectorController.js";
+import { RagController } from "../controllers/ragController.js";
 
 const router: IRouter = Router();
 

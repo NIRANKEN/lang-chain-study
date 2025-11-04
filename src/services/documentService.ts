@@ -2,15 +2,15 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube";
 import { LanceDB } from "@langchain/community/vectorstores/lancedb";
 import { Document } from "@langchain/core/documents";
-import { getDatabase } from "../config/database";
-import { embeddings, textSplitter } from "../config/models";
+import { getDatabase } from "../config/database.js";
+import { embeddings, textSplitter } from "../config/models.js";
 import {
   PDF_FILE_PATH,
   YOUTUBE_TEST_URL,
   TABLE_NAMES,
   DB_PATH,
-} from "../config/constants";
-import { DocumentProcessResult } from "../types";
+} from "../config/constants.js";
+import { DocumentProcessResult } from "../types/index.js";
 import { Innertube } from "youtubei.js";
 
 export class DocumentService {

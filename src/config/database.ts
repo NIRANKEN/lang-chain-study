@@ -1,6 +1,6 @@
 import * as lancedb from "@lancedb/lancedb";
 import { mkdir } from "fs/promises";
-import { DB_PATH } from "./constants";
+import { DB_PATH } from "./constants.js";
 
 let db: lancedb.Connection | null = null;
 

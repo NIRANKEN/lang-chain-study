@@ -1,4 +1,4 @@
-import { createApp, startServer } from "./app";
+import { createApp, startServer } from "./app.js";
 
 async function main() {
   try {

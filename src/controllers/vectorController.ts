@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { VectorStoreService } from "../services/vectorService";
-import { DocumentService } from "../services/documentService";
-import { ErrorResponse, YoutubeInputRequest, YoutubePlaylistRequest } from "../types";
+import { VectorStoreService } from "../services/vectorService.js";
+import { DocumentService } from "../services/documentService.js";
+import { ErrorResponse, YoutubeInputRequest, YoutubePlaylistRequest } from "../types/index.js";
 
 export class VectorController {
   private vectorStoreService: VectorStoreService;

@@ -1,7 +1,7 @@
 import express, { Application } from "express";
 import dotenv from "dotenv";
-import routes from "./routes";
-import { initializeDatabase } from "./config/database";
+import routes from "./routes/index.js";
+import { initializeDatabase } from "./config/database.js";
 
 // Load environment variables
 dotenv.config();

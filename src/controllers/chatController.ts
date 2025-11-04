@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { chatChain } from "../config/models";
-import { ChatRequest, ChatResponse, ErrorResponse, HealthResponse, ApiInfo } from "../types";
+import { chatChain } from "../config/models.js";
+import { ChatRequest, ChatResponse, ErrorResponse, HealthResponse, ApiInfo } from "../types/index.js";
 
 export class ChatController {
   /**

@@ -1,5 +1,5 @@
-import { getDatabase } from "../config/database";
-import { TABLE_NAMES } from "../config/constants";
+import { getDatabase } from "../config/database.js";
+import { TABLE_NAMES } from "../config/constants.js";
 
 export class VectorStoreService {
   /**

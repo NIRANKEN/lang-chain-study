@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { RagService } from "../services/ragService";
-import { VectorStoreService } from "../services/vectorService";
+import { RagService } from "../services/ragService.js";
+import { VectorStoreService } from "../services/vectorService.js";
 import {
   TABLE_NAMES,
   SYSTEM_MESSAGES,
   FALLBACK_SOURCES,
-} from "../config/constants";
-import { ChatRequest, ErrorResponse } from "../types";
+} from "../config/constants.js";
+import { ChatRequest, ErrorResponse } from "../types/index.js";
 
 export class RagController {
   private ragService: RagService;
