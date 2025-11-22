@@ -2,6 +2,7 @@ import * as z from "zod";
 import { tool } from "@langchain/core/tools";
 import { createAgent } from "langchain";
 import { LanceDB } from "@langchain/community/vectorstores/lancedb";
+import { MultiQueryRetriever } from "langchain/retrievers/multi_query";
 import { getDatabase } from "../config/database.js";
 import { model, embeddings } from "../config/models.js";
 import { RETRIEVAL_CONFIG } from "../config/constants.js";
@@ -34,10 +35,22 @@ export class RagService {
         const vectorStore = new LanceDB(embeddings, {
           table: dbTable,
         });
-        const retrievedResults = await vectorStore.similaritySearchWithScore(
-          query,
-          RETRIEVAL_CONFIG.resultCount
+
+        const multiQueryRetriever = MultiQueryRetriever.fromLLM({
+          llm: model,
+          retriever: vectorStore.asRetriever({ k: 3 }),
+          queryCount: 3,
+          verbose: true,
+        });
+
+        const multiQueryRetrievedDocs =
+          await multiQueryRetriever.getRelevantDocuments(query);
+
+        // 後続処理のために `retrievedResults` の型と合わせる
+        const retrievedResults = multiQueryRetrievedDocs.map(
+          (doc) => [doc, 0] as [any, number]
         );
+
         const serialized = retrievedResults
           .map(
             (result) =>
