@@ -1,7 +1,15 @@
 import { Innertube } from "youtubei.js";
-import { SearchFilters } from "youtubei.js/dist/src/types/index.js";
 import { YoutubeSearchRequest } from "../types/index.js";
-import Video from "youtubei.js/dist/src/parser/nodes/Video.js";
+
+// Innertube.searchの第二引数の型を取得
+type SearchFilters = Parameters<Innertube["search"]>[1];
+
+// youtubei.jsのVideoクラスがトップレベルでエクスポートされていないため、
+// 必要なプロパティを持つローカルなインターフェースを定義する
+interface IVideo {
+  id: string;
+  published: Date | string;
+}
 
 export class YoutubeService {
   private youtube: Innertube;
@@ -26,9 +34,12 @@ export class YoutubeService {
     } = request;
 
     // オプショナルキーワードを解析して、検索クエリのリストを作成
-    const optionalKeywords = optionalKeyword.split(" ").map((keyword) => {
-      return keyword.replace(/&&/g, " ");
-    });
+    const optionalKeywords = optionalKeyword
+      .trim()
+      .split(/\s+/)
+      .map((keyword) => {
+        return keyword.replace(/&&/g, " ");
+      });
 
     const searchQueries = optionalKeywords.map(
       (optKeyword) => `${requiredKeyword} ${optKeyword}`
@@ -51,16 +62,23 @@ export class YoutubeService {
     for (const query of searchQueries) {
       console.log(`Searching for: ${query}`);
       let searchResult = await this.youtube.search(query, searchFilters);
-      let collectedVideos: Video[] = [];
+      let collectedVideos: IVideo[] = [];
 
       const fiveYearsAgo = new Date();
       fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
 
       while (collectedVideos.length < resultsLength) {
-        const filteredVideos = searchResult.videos.filter((video): video is Video => {
-            if (!video.published) return false;
-            const publishedDate = typeof video.published === "string" ? new Date(video.published) : video.published;
-            return publishedDate >= fiveYearsAgo;
+        const videos = searchResult.videos.filter(
+          (video: any) => video.constructor.name === "Video"
+        ) as IVideo[];
+
+        const filteredVideos = videos.filter((video) => {
+          if (!video.published) return false;
+          const publishedDate =
+            typeof video.published === "string"
+              ? new Date(video.published)
+              : video.published;
+          return publishedDate >= fiveYearsAgo;
         });
 
         collectedVideos.push(...filteredVideos);
