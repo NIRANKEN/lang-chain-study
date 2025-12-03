@@ -1,6 +1,6 @@
 import express, { Application } from "express";
 import dotenv from "dotenv";
-import routes from "./routes/index.js";
+import { initializeRoutes } from "./routes/index.js";
 import { initializeDatabase } from "./config/database.js";
 
 // Load environment variables
@@ -15,7 +15,8 @@ export async function createApp(): Promise<Application> {
   // Initialize database
   await initializeDatabase();
 
-  // Routes
+  // Initialize routes
+  const routes = await initializeRoutes();
   app.use("/", routes);
 
   return app;
