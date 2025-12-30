@@ -4,8 +4,11 @@ import { createAgent } from "langchain";
 import { LanceDB } from "@langchain/community/vectorstores/lancedb";
 import { getDatabase } from "../config/database.js";
 import { model, embeddings } from "../config/models.js";
-import { RETRIEVAL_CONFIG } from "../config/constants.js";
+// import { RETRIEVAL_CONFIG } from "../config/constants.js";
 import { OutputTestOptions, RagResponse } from "../types/index.js";
+import { MultiQueryRetriever } from "@langchain/classic/retrievers/multi_query";
+import { DocumentInterface } from "@langchain/core/documents";
+import { RETRIEVAL_CONFIG } from "../config/constants.js";
 
 const retrieveSchema = z.object({ query: z.string() });
 
@@ -34,10 +37,31 @@ export class RagService {
         const vectorStore = new LanceDB(embeddings, {
           table: dbTable,
         });
-        const retrievedResults = await vectorStore.similaritySearchWithScore(
-          query,
-          RETRIEVAL_CONFIG.resultCount
+
+        // クエリを直接使用して類似ドキュメントを取得
+        // const retrievedResults = await vectorStore.similaritySearchWithScore(
+        //   query,
+        //   RETRIEVAL_CONFIG.resultCount
+        // );
+
+       // Multi-Query Retrieverを使用してより多様な関連ドキュメントを取得
+       const multiQueryRetriever = MultiQueryRetriever.fromLLM({
+          llm: model,
+          retriever: vectorStore.asRetriever({ k: RETRIEVAL_CONFIG.resultCount }),
+          queryCount: 3, // 生成する複数クエリの数
+          verbose: true,
+        });
+
+        const multiQueryRetrievedDocs =
+          await multiQueryRetriever._getRelevantDocuments(query);
+
+        // 後続処理のために `retrievedResults` の型と合わせる
+        const retrievedResults = multiQueryRetrievedDocs.map(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (doc) => [doc, 0] as [DocumentInterface<Record<string, any>>, number]
         );
+        // --- Multi-Query Retriever おわり ---
+
         const serialized = retrievedResults
           .map(
             (result) =>
