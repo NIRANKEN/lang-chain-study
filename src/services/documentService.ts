@@ -1,5 +1,4 @@
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
-import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube";
 import { LanceDB } from "@langchain/community/vectorstores/lancedb";
 import { Document } from "@langchain/core/documents";
 import { getDatabase } from "../config/database.js";
@@ -12,6 +11,101 @@ import {
 } from "../config/constants.js";
 import { DocumentProcessResult } from "../types/index.js";
 import { Innertube } from "youtubei.js";
+
+/**
+ * HTMLエンティティをデコード
+ */
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(parseInt(num, 10)));
+}
+
+/**
+ * <p t="ms" d="ms">text</p> フォーマットをパース（Androidクライアント）
+ */
+function parsePTagFormat(xml: string): Array<{ text: string }> {
+  const segments: Array<{ text: string }> = [];
+  const pTagRegex = /<p\s+t="(\d+)"\s+d="(\d+)"[^>]*>([\s\S]*?)<\/p>/g;
+
+  let match = pTagRegex.exec(xml);
+  while (match !== null) {
+    const [, , , rawText] = match;
+    if (rawText) {
+      const text = decodeHtmlEntities(rawText.replace(/<[^>]+>/g, "")).trim();
+      if (text) {
+        segments.push({ text });
+      }
+    }
+    match = pTagRegex.exec(xml);
+  }
+  return segments;
+}
+
+/**
+ * <text start="sec" dur="sec">text</text> フォーマットをパース
+ */
+function parseTextTagFormat(xml: string): Array<{ text: string }> {
+  const segments: Array<{ text: string }> = [];
+  const textTagRegex =
+    /<text\s+start="([\d.]+)"\s+dur="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/g;
+
+  let match = textTagRegex.exec(xml);
+  while (match !== null) {
+    const [, , , rawText] = match;
+    if (rawText) {
+      const text = decodeHtmlEntities(rawText.replace(/<[^>]+>/g, "")).trim();
+      if (text) {
+        segments.push({ text });
+      }
+    }
+    match = textTagRegex.exec(xml);
+  }
+  return segments;
+}
+
+/**
+ * timedtext XMLをパース
+ */
+function parseTimedTextXml(xml: string): string {
+  // まず<p>タグフォーマットを試す
+  const pSegments = parsePTagFormat(xml);
+  if (pSegments.length > 0) {
+    return pSegments.map((s) => s.text).join(" ");
+  }
+  // フォールバックとして<text>タグフォーマット
+  const textSegments = parseTextTagFormat(xml);
+  return textSegments.map((s) => s.text).join(" ");
+}
+
+/**
+ * キャプショントラックからトランスクリプトを取得
+ */
+async function fetchCaptionTrack(captionUrl: string): Promise<string> {
+  const response = await fetch(captionUrl, {
+    headers: {
+      "Accept-Language": "en-US,en;q=0.9",
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch caption track: ${response.status}`);
+  }
+
+  const xml = await response.text();
+  if (!xml || xml.length === 0) {
+    throw new Error("Empty caption track response");
+  }
+
+  return parseTimedTextXml(xml);
+}
 
 export class DocumentService {
   /**
@@ -143,21 +237,88 @@ export class DocumentService {
       };
     }
 
+    // Innertubeクライアントを作成（ボット検出回避のための設定）
+    const youtube = await Innertube.create({
+      generate_session_locally: true,
+      lang: "ja",
+      location: "JP",
+      retrieve_player: false,
+    });
+
     let allDocs: Document[] = [];
     for (const url of urlsToProcess) {
       console.log(`Processing YouTube URL: ${url}`);
-      const ytLoader = YoutubeLoader.createFromUrl(url, {
-        language: "ja",
-        addVideoInfo: true,
-      });
+      
+      // URLから動画IDを抽出
+      let videoId: string;
       try {
-        const docs = await ytLoader.load();
-        // 各ドキュメントのメタデータに完全なURLをsourceとして設定
-        docs.forEach((doc) => {
-          doc.metadata.source = url;
+        const urlObj = new URL(url);
+        const vParam = urlObj.searchParams.get("v");
+        if (!vParam) {
+          throw new Error("動画IDが見つかりません");
+        }
+        videoId = vParam;
+      } catch {
+        // URLパースに失敗した場合、従来のsplit方式をフォールバック
+        const splitResult = url.split("v=")[1];
+        if (!splitResult) {
+          console.error(`Invalid YouTube URL: ${url}`);
+          continue;
+        }
+        videoId = splitResult.split(/[&#]/)[0];
+      }
+
+      try {
+        // getBasicInfoを使用してキャプショントラックを取得
+        const info = await youtube.getBasicInfo(videoId);
+        const captionTracks = info.captions?.caption_tracks;
+
+        if (!captionTracks || captionTracks.length === 0) {
+          console.error(
+            `No caption tracks found for ${url}. Skipping...`
+          );
+          continue;
+        }
+
+        // 日本語または英語のキャプショントラックを探す（自動生成以外を優先）
+        const jaTrack =
+          captionTracks.find((t) => t.language_code === "ja" && t.kind !== "asr") ||
+          captionTracks.find((t) => t.language_code?.startsWith("ja"));
+        
+        const enTrack =
+          captionTracks.find((t) => t.language_code === "en" && t.kind !== "asr") ||
+          captionTracks.find((t) => t.language_code?.startsWith("en"));
+
+        const selectedTrack = jaTrack || enTrack || captionTracks[0];
+
+        if (!selectedTrack?.base_url) {
+          console.error(`No valid caption URL found for ${url}. Skipping...`);
+          continue;
+        }
+
+        console.log(
+          `Using caption track: ${selectedTrack.language_code} (${selectedTrack.kind || "manual"})`
+        );
+
+        // キャプショントラックを取得
+        const transcriptText = await fetchCaptionTrack(selectedTrack.base_url);
+
+        if (!transcriptText || transcriptText.trim().length === 0) {
+          console.error(`Empty transcript for ${url}. Skipping...`);
+          continue;
+        }
+
+        // メタデータを含むDocumentを作成
+        // 既存のテーブルスキーマと互換性を保つため、sourceフィールドのみを使用
+        const doc = new Document({
+          pageContent: transcriptText,
+          metadata: {
+            source: url,
+          },
         });
 
-        allDocs = allDocs.concat(docs);
+        allDocs.push(doc);
+        console.log(`Successfully processed ${url}`);
       } catch (error) {
         console.error(`Error loading YouTube URL ${url}:`, error);
         continue; // エラーが発生した場合、そのURLの処理をスキップ
@@ -167,11 +328,14 @@ export class DocumentService {
     // 処理できたドキュメントがない場合は早期リターン
     if (allDocs.length === 0) {
       return {
-        message: "処理可能なYouTube動画が見つかりませんでした（トランスクリプトが利用できない可能性があります）",
+        message:
+          "処理可能なYouTube動画が見つかりませんでした（キャプションが利用できない可能性があります）",
         totalChunks: 0,
       };
     }
-
+    for (const doc of allDocs) {
+      console.log(`Document contents: ${doc.pageContent.substring(0, 100)}...`);
+    }
     const allSplits = await textSplitter.splitDocuments(allDocs);
     console.log(`Split into ${allSplits.length} chunks.`);
 
@@ -210,7 +374,7 @@ export class DocumentService {
     console.log(`テーブル内の総行数: ${totalRows}`);
 
     return {
-      message: `YouTube動画の処理が完了しました (新規${urlsToProcess.length}件 / 全${inputUrls.length}件)`,
+      message: `YouTube動画の処理が完了しました (新規${allDocs.length}件 / 全${inputUrls.length}件)`,
       totalChunks: allSplits.length,
       totalRowsInTable: totalRows,
     };

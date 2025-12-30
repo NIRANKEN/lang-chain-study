@@ -65,3 +65,20 @@ export interface DocumentProcessResult {
   totalChunks: number;
   totalRowsInTable?: number;
 }
+
+// YouTube search request
+export type SortBy = "relevance" | "rating" | "upload_date" | "view_count";
+export type Duration = "short" | "long";
+
+export interface YoutubeSearchOptions {
+  sort_by?: SortBy;
+  duration?: Duration;
+  yearsBack?: number; // 何年前までの動画を対象にするか（デフォルト: 3年）
+}
+
+export interface YoutubeSearchRequest {
+  requiredKeyword: string;
+  optionalKeyword: string;
+  resultsLength: number;
+  searchOptions?: YoutubeSearchOptions;
+}
