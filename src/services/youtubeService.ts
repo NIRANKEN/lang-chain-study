@@ -109,8 +109,10 @@ export class YoutubeService {
 
     let collectedVideos: IVideo[] = [];
 
-    const fiveYearsAgo = new Date();
-    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 3);
+    // yearsBackオプションから対象期間を設定（デフォルトは3年）
+    const yearsBack = searchOptions?.yearsBack ?? 3;
+    const targetDate = new Date();
+    targetDate.setFullYear(targetDate.getFullYear() - yearsBack);
 
     const maxAttempts = 10; // 無限ループ防止のための最大試行回数
     let attempts = 0;
@@ -155,7 +157,7 @@ export class YoutubeService {
             return false;
           }
           
-          return publishedDate >= fiveYearsAgo;
+          return publishedDate >= targetDate;
         });
 
         collectedVideos.push(...filteredVideos);
