@@ -2,13 +2,14 @@
   "name": "lang-chain-study",
   "version": "1.0.0",
   "description": "LangChain tutorial application with TypeScript and Google GenAI",
-  "main": "dist/index.js",
+  "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "dev": "nodemon",
+    "dev:tsx": "tsx --watch src/server.ts",
     "dev:cli": "tsx src/cli.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/server.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix"
   },
@@ -20,21 +21,30 @@
   ],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.19.0",
+  "packageManager": "pnpm@10.20.0",
   "devDependencies": {
     "@types/express": "^5.0.4",
     "@types/node": "^24.9.1",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "eslint": "^9.38.0",
+    "nodemon": "^3.1.10",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@lancedb/lancedb": "^0.22.2",
+    "@langchain/classic": "^1.0.0",
+    "@langchain/community": "^1.0.0",
     "@langchain/core": "^1.0.1",
     "@langchain/google-genai": "^1.0.0",
+    "@langchain/google-vertexai": "^1.0.0",
+    "@langchain/textsplitters": "^1.0.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "langchain": "^1.0.1"
+    "langchain": "^1.0.1",
+    "pdf-parse": "1.1.1",
+    "youtubei.js": "^16.0.1",
+    "zod": "^4.1.12"
   }
 }
